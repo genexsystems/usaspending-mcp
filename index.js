@@ -246,6 +246,29 @@ function createServer() {
 // SSE transport -- one client at a time, Render-compatible
 const transports = {};
 
+app.get("/.well-known/oauth-authorization-server", (req, res) => {
+  res.json({
+    issuer: "https://usaspending-mcp-me7p.onrender.com",
+    authorization_endpoint: "https://usaspending-mcp-me7p.onrender.com/oauth/authorize",
+    token_endpoint: "https://usaspending-mcp-me7p.onrender.com/oauth/token",
+    response_types_supported: ["code"],
+    grant_types_supported: ["authorization_code"],
+  });
+});
+
+app.get("/oauth/authorize", (req, res) => {
+  const { redirect_uri, state } = req.query;
+  res.redirect(`${redirect_uri}?state=${state}&code=noauth`);
+});
+
+app.post("/oauth/token", (req, res) => {
+  res.json({
+    access_token: "noauth",
+    token_type: "bearer",
+    expires_in: 86400,
+  });
+});
+
 app.get("/sse", async (req, res) => {
   const transport = new SSEServerTransport("/messages", res);
   transports[transport.sessionId] = transport;
