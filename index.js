@@ -246,25 +246,44 @@ function createServer() {
 // SSE transport -- one client at a time, Render-compatible
 const transports = {};
 
+app.get("/.well-known/oauth-protected-resource", (req, res) => {
+  res.json({
+    resource: "https://usaspending-mcp-me7p.onrender.com",
+    authorization_servers: ["https://usaspending-mcp-me7p.onrender.com"],
+  });
+});
+
 app.get("/.well-known/oauth-authorization-server", (req, res) => {
   res.json({
     issuer: "https://usaspending-mcp-me7p.onrender.com",
     authorization_endpoint: "https://usaspending-mcp-me7p.onrender.com/oauth/authorize",
     token_endpoint: "https://usaspending-mcp-me7p.onrender.com/oauth/token",
+    registration_endpoint: "https://usaspending-mcp-me7p.onrender.com/oauth/register",
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code"],
+    code_challenge_methods_supported: ["S256"],
+  });
+});
+
+app.post("/oauth/register", (req, res) => {
+  res.json({
+    client_id: "noauth-client",
+    client_secret: "noauth-secret",
+    redirect_uris: req.body.redirect_uris || [],
+    grant_types: ["authorization_code"],
+    response_types: ["code"],
   });
 });
 
 app.get("/oauth/authorize", (req, res) => {
-  const { redirect_uri, state } = req.query;
-  res.redirect(`${redirect_uri}?state=${state}&code=noauth`);
+  const { redirect_uri, state, code_challenge } = req.query;
+  res.redirect(`${redirect_uri}?code=noauth-code&state=${state}`);
 });
 
 app.post("/oauth/token", (req, res) => {
   res.json({
-    access_token: "noauth",
-    token_type: "bearer",
+    access_token: "noauth-token",
+    token_type: "Bearer",
     expires_in: 86400,
   });
 });
